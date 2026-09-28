@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Noor local state
+_meta/
+__pycache__/
+*.pyc
+venv/
+venv*/
+*_venv/
+.env
+.env.local
