@@ -15,6 +15,21 @@ from starlette.routing import Mount, Route
 
 from noor_governance_mcp import mcp
 
+ALLOWED_HOSTS = os.environ.get(
+    "NOOR_ALLOWED_HOSTS",
+    "noor-mcp-server.onrender.com,localhost,127.0.0.1,0.0.0.0",
+).split(",")
+
+try:
+    from mcp.server.transport_security import TransportSecuritySettings
+    mcp.settings.transport_security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=False,
+        allowed_hosts=ALLOWED_HOSTS,
+    )
+    print("✅ DNS rebinding protection disabled; allowed hosts set")
+except Exception as e:
+    print(f"⚠️ Could not configure transport security: {e}")
+
 
 async def health(request):
     return JSONResponse({
@@ -23,6 +38,7 @@ async def health(request):
         "version": "1.0.0",
         "transport": "streamable-http",
         "endpoint": "/mcp",
+        "allowed_hosts": ALLOWED_HOSTS,
     })
 
 
