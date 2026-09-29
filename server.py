@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Noor Governance MCP Server - HTTP/SSE transport."""
+"""Noor Governance MCP Server - Streamable HTTP transport."""
 
 import os
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -20,14 +21,27 @@ async def health(request):
         "status": "ok",
         "server": "noor-governance",
         "version": "1.0.0",
-        "transport": "http+sse",
+        "transport": "streamable-http",
+        "endpoint": "/mcp",
     })
 
 
-app = Starlette(routes=[
-    Route("/health", health),
-    Mount("/", app=mcp.sse_app()),
-])
+child = mcp.streamable_http_app()
+
+
+@asynccontextmanager
+async def lifespan(app):
+    async with mcp.session_manager.run():
+        yield
+
+
+app = Starlette(
+    routes=[
+        Route("/health", health),
+        Mount("/", app=child),
+    ],
+    lifespan=lifespan,
+)
 
 
 if __name__ == "__main__":
