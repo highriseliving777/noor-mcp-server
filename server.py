@@ -42,6 +42,15 @@ async def health(request):
     })
 
 
+async def glama_well_known(request):
+    """Serve the Glama ownership verification file."""
+    from starlette.responses import Response
+    return Response(
+        content='{"$schema": "https://glama.ai/mcp/schemas/connector.json", "claim": "glama_claim_NNji3nr9QzNoEX3rXAuhOieFj31GPJk6"}',
+        media_type="application/json",
+    )
+
+
 child = mcp.streamable_http_app()
 
 
@@ -54,6 +63,7 @@ async def lifespan(app):
 app = Starlette(
     routes=[
         Route("/health", health),
+        Route("/.well-known/glama.json", glama_well_known),
         Mount("/", app=child),
     ],
     lifespan=lifespan,
