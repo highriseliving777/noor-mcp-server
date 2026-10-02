@@ -36,6 +36,7 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 LOCAL_MODEL = "qwen2.5:3b"
 CLOUD_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
 UNLAWFUL_REFERENCE_FILE = Path(__file__).parent / "_reference" / "references" / "unlawful_categories.md"
+AAOIFI_SUMMARY_FILE = Path(__file__).parent / "_reference" / "references" / "aaoifi_screener_summary.md"
 
 DISCLAIMER = (
     "This screening is automated and based on publicly available scholarship. "
@@ -104,9 +105,16 @@ def detect_direct_participation(task: str) -> bool:
 
 # --- Layer 2: LLM subtle check (only when no keywords detected) ---
 def load_lawful_reference() -> str:
+    """Load both reference files: the 15-category list + the AAOIFI summary."""
+    parts = []
     if UNLAWFUL_REFERENCE_FILE.exists():
-        return UNLAWFUL_REFERENCE_FILE.read_text()
-    return "(Reference file not found)"
+        parts.append(UNLAWFUL_REFERENCE_FILE.read_text())
+    if AAOIFI_SUMMARY_FILE.exists():
+        parts.append("\n\n=== AAOIFI KEY DEFINITIONS ===\n\n")
+        parts.append(AAOIFI_SUMMARY_FILE.read_text())
+    if not parts:
+        return "(Reference files not found)"
+    return "".join(parts)
 
 def call_ollama(prompt: str) -> str:
     try:
@@ -249,6 +257,7 @@ def get_screener_status() -> dict:
         "llm_primary": LOCAL_MODEL,
         "llm_fallback": CLOUD_MODEL if os.environ.get("OPENROUTER_API_KEY") else "none",
         "unlawful_reference": str(UNLAWFUL_REFERENCE_FILE),
+        "aaoifi_summary": str(AAOIFI_SUMMARY_FILE),
         "manual_review_required": False,
         "blocked_is_retired": True,
         "disclaimer": "Orientation, not adjudication."
